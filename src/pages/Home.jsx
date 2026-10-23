@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import ResourceCard from "@/components/ResourceCard";
-import { Wrench, AlertTriangle, Layers, ArrowRight, Plus, Search, BookOpen } from "lucide-react";
+import { Wrench, AlertTriangle, Layers, ArrowRight, Plus, Search, BookOpen, LogIn, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 
 const SECTIONS = [
@@ -14,6 +15,7 @@ const SECTIONS = [
 ];
 
 export default function Home() {
+  const { user, isAuthenticated, isLoadingAuth, logout } = useAuth();
   const [counts, setCounts] = useState({});
   const [recent, setRecent] = useState({ manuals: [], issues: [], diagrams: [] });
   const [q, setQ] = useState("");
@@ -57,9 +59,20 @@ export default function Home() {
               </span>
               Garagewiki
             </Link>
-            <Link to="/contribute" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white">
-              <Plus className="w-4 h-4" /> Contribute
-            </Link>
+            <div className="flex items-center gap-5">
+              <Link to="/contribute" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white">
+                <Plus className="w-4 h-4" /> Contribute
+              </Link>
+              {!isLoadingAuth && (isAuthenticated ? (
+                <button onClick={() => logout()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white" title={user?.email}>
+                  <LogOut className="w-4 h-4" /> Sign out
+                </button>
+              ) : (
+                <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white">
+                  <LogIn className="w-4 h-4" /> Sign in
+                </Link>
+              ))}
+            </div>
           </nav>
 
           <div className="mt-16 sm:mt-24 max-w-2xl">
