@@ -65,6 +65,11 @@ function makeEntity(table) {
       return unwrap(await supabase.from(table).update(patch).eq('id', id).select().single())
     },
 
+    async delete(id) {
+      const { error } = await supabase.from(table).delete().eq('id', id)
+      if (error) throw error
+    },
+
     // Anyone may mark an entry helpful; done server-side so the column can't be edited arbitrarily.
     async vote(id) {
       unwrap(await supabase.rpc('increment_helpful_votes', { p_table: table, p_id: id }))

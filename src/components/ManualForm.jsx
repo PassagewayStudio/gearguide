@@ -14,9 +14,13 @@ const MAX_PDF_MB = 50;
 
 const CATEGORIES = ["Engine", "Transmission", "Electrical", "Brakes", "Suspension", "Body", "Interior", "General"];
 
-export default function ManualForm() {
+export default function ManualForm({ record }) {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ title: "", make: "", model: "", year: "", category: "Engine", description: "", cover_image: null, manual_file_url: "", source: "" });
+  const [form, setForm] = useState(record ? {
+    title: record.title || "", make: record.make || "", model: record.model || "", year: record.year ? String(record.year) : "",
+    category: record.category || "Engine", description: record.description || "", cover_image: record.cover_image || null,
+    manual_file_url: record.manual_file || "", source: record.source || "",
+  } : { title: "", make: "", model: "", year: "", category: "Engine", description: "", cover_image: null, manual_file_url: "", source: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -53,19 +57,22 @@ export default function ManualForm() {
     setSaving(true);
     setError("");
     try {
-      const record = await db.entities.Manual.create({
+      const fields = {
         title: form.title,
         make: form.make,
         model: form.model,
-        year: form.year ? Number(form.year) : undefined,
+        year: form.year ? Number(form.year) : null,
         category: form.category,
         description: form.description,
         cover_image: form.cover_image,
-        manual_file: form.manual_file_url || undefined,
-        source: form.source || undefined,
-      });
+        manual_file: form.manual_file_url || null,
+        source: form.source || null,
+      };
+      const saved = record
+        ? await db.entities.Manual.update(record.id, fields)
+        : await db.entities.Manual.create(fields);
       setDone(true);
-      setTimeout(() => navigate(`/view/manuals/${record.id}`), 900);
+      setTimeout(() => navigate(`/view/manuals/${saved.id}`), 900);
     } catch (e) {
       setError("Could not save. Please try again.");
     } finally {
@@ -77,7 +84,7 @@ export default function ManualForm() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-        <p className="mt-3 font-medium">Manual added to the library.</p>
+        <p className="mt-3 font-medium">{record ? "Changes saved." : "Manual added to the library."}</p>
       </div>
     );
   }
@@ -140,7 +147,7 @@ export default function ManualForm() {
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button type="submit" disabled={saving || pdfUploading} className="bg-amber-600 hover:bg-amber-700 text-white">
         {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-        Publish manual
+        {record ? "Save changes" : "Publish manual"}
       </Button>
     </form>
   );

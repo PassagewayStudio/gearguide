@@ -12,9 +12,13 @@ import { Loader2, CheckCircle2 } from "lucide-react";
 
 const CATEGORIES = ["Engine", "Transmission", "Electrical", "Brakes", "Suspension", "Body", "Interior", "General"];
 
-export default function DiagramForm() {
+export default function DiagramForm({ record }) {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ title: "", make: "", model: "", year: "", category: "Engine", system: "", description: "", diagram_image: null, parts: "" });
+  const [form, setForm] = useState(record ? {
+    title: record.title || "", make: record.make || "", model: record.model || "", year: record.year ? String(record.year) : "",
+    category: record.category || "Engine", system: record.system || "", description: record.description || "",
+    diagram_image: record.diagram_image || null, parts: record.parts || "",
+  } : { title: "", make: "", model: "", year: "", category: "Engine", system: "", description: "", diagram_image: null, parts: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -30,19 +34,22 @@ export default function DiagramForm() {
     setSaving(true);
     setError("");
     try {
-      const record = await db.entities.ExplodedDiagram.create({
+      const fields = {
         title: form.title,
         make: form.make,
         model: form.model,
-        year: form.year ? Number(form.year) : undefined,
+        year: form.year ? Number(form.year) : null,
         category: form.category,
-        system: form.system || undefined,
+        system: form.system || null,
         description: form.description,
         diagram_image: form.diagram_image,
         parts: form.parts,
-      });
+      };
+      const saved = record
+        ? await db.entities.ExplodedDiagram.update(record.id, fields)
+        : await db.entities.ExplodedDiagram.create(fields);
       setDone(true);
-      setTimeout(() => navigate(`/view/diagrams/${record.id}`), 900);
+      setTimeout(() => navigate(`/view/diagrams/${saved.id}`), 900);
     } catch (e) {
       setError("Could not save. Please try again.");
     } finally {
@@ -54,7 +61,7 @@ export default function DiagramForm() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-        <p className="mt-3 font-medium">Diagram added to the library.</p>
+        <p className="mt-3 font-medium">{record ? "Changes saved." : "Diagram added to the library."}</p>
       </div>
     );
   }
@@ -101,7 +108,7 @@ export default function DiagramForm() {
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button type="submit" disabled={saving} className="bg-amber-600 hover:bg-amber-700 text-white">
         {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-        Publish diagram
+        {record ? "Save changes" : "Publish diagram"}
       </Button>
     </form>
   );

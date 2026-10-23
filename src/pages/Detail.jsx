@@ -1,10 +1,13 @@
 import { db } from "@/lib/db";
 
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 
 import { Image } from "@/components/ui/image";
-import { ArrowLeft, Plus, ThumbsUp, Wrench, AlertTriangle, Layers, FileText, Calendar, Tag } from "lucide-react";
+import { ArrowLeft, Plus, ThumbsUp, Wrench, AlertTriangle, Layers, FileText, Calendar, Tag, Pencil, Trash2, Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import TroubleshootingLog from "@/components/TroubleshootingLog";
 
 const TYPE_MAP = {
@@ -21,6 +24,11 @@ export default function Detail() {
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -37,6 +45,18 @@ export default function Detail() {
     })();
     return () => { active = false; };
   }, [type, id]);
+
+  const remove = async () => {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await Entity.delete(id);
+      navigate(`/browse/${meta.browse}`);
+    } catch {
+      setDeleteError("Could not delete this entry. Please try again.");
+      setDeleting(false);
+    }
+  };
 
   const vote = async () => {
     if (voting || !item) return;
@@ -102,6 +122,36 @@ export default function Detail() {
         </div>
 
         <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">{item.title}</h1>
+
+        {user && item.created_by === user.id && (
+          <div className="mt-4 flex items-center gap-3">
+            <Link to={`/edit/${type}/${id}`} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-border hover:bg-muted">
+              <Pencil className="w-4 h-4" /> Edit
+            </Link>
+            <button onClick={() => setConfirmOpen(true)} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">
+              <Trash2 className="w-4 h-4" /> Delete
+            </button>
+          </div>
+        )}
+
+        <Dialog open={confirmOpen} onOpenChange={(o) => !deleting && setConfirmOpen(o)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete this {meta.label.toLowerCase()}?</DialogTitle>
+              <DialogDescription>
+                "{item.title}" will be removed for everyone{type === "issues" ? ", along with its troubleshooting steps" : ""}. This can't be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {deleteError && <p className="text-sm text-red-500">{deleteError}</p>}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={deleting}>Cancel</Button>
+              <Button onClick={remove} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {mainImage && (
           <div className="mt-6 grid lg:grid-cols-[1fr_88px] gap-4">
