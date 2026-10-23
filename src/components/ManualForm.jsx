@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, FileText, UploadCloud, X } from "lucide-react";
+
+const MAX_PDF_MB = 50;
 
 const CATEGORIES = ["Engine", "Transmission", "Electrical", "Brakes", "Suspension", "Body", "Interior", "General"];
 
@@ -18,6 +20,27 @@ export default function ManualForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [pdfName, setPdfName] = useState("");
+
+  const handlePdf = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.type !== "application/pdf") { setError("Please choose a PDF file."); return; }
+    if (file.size > MAX_PDF_MB * 1024 * 1024) { setError(`PDF must be under ${MAX_PDF_MB} MB.`); return; }
+    setError("");
+    setPdfUploading(true);
+    try {
+      const { file_url } = await db.integrations.Core.UploadPublicFile({ file });
+      set("manual_file_url", file_url);
+      setPdfName(file.name);
+    } catch {
+      setError("PDF upload failed. Please try again.");
+    } finally {
+      setPdfUploading(false);
+    }
+  };
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -95,11 +118,27 @@ export default function ManualForm() {
       </div>
       <ImageUpload label="Cover image" value={form.cover_image} onChange={(v) => set("cover_image", v)} help="A representative photo of the manual or vehicle." />
       <div className="space-y-1.5">
-        <Label>Manual file link (PDF / URL)</Label>
-        <Input value={form.manual_file_url} onChange={(e) => set("manual_file_url", e.target.value)} placeholder="https://..." />
+        <Label>Manual file (PDF)</Label>
+        {pdfName ? (
+          <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+            <FileText className="w-4 h-4 text-amber-600" />
+            <span className="truncate flex-1">{pdfName}</span>
+            <button type="button" onClick={() => { setPdfName(""); set("manual_file_url", ""); }} aria-label="Remove PDF">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50">
+            {pdfUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+            {pdfUploading ? "Uploading…" : `Upload a PDF (up to ${MAX_PDF_MB} MB)`}
+            <input type="file" accept="application/pdf" className="hidden" onChange={handlePdf} disabled={pdfUploading} />
+          </label>
+        )}
+        <p className="text-xs text-muted-foreground">Or paste a link to a manual hosted elsewhere:</p>
+        <Input value={pdfName ? "" : form.manual_file_url} disabled={!!pdfName} onChange={(e) => set("manual_file_url", e.target.value)} placeholder="https://..." />
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
-      <Button type="submit" disabled={saving} className="bg-amber-600 hover:bg-amber-700 text-white">
+      <Button type="submit" disabled={saving || pdfUploading} className="bg-amber-600 hover:bg-amber-700 text-white">
         {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
         Publish manual
       </Button>
