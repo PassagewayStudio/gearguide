@@ -87,7 +87,7 @@ export default function Home() {
             </p>
 
             <form
-              onSubmit={(e) => { e.preventDefault(); if (q.trim()) window.location.href = `/browse/manuals?q=${encodeURIComponent(q)}`; }}
+              onSubmit={(e) => { e.preventDefault(); if (q.trim()) window.location.href = `/search?q=${encodeURIComponent(q.trim())}`; }}
               className="mt-8 flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-2xl max-w-lg"
             >
               <Search className="w-5 h-5 text-zinc-400 ml-2" />

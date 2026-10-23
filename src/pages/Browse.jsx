@@ -29,6 +29,12 @@ export default function Browse() {
     category: "",
   });
 
+  const [debouncedQ, setDebouncedQ] = useState(filters.q);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filters.q), 250);
+    return () => clearTimeout(t);
+  }, [filters.q]);
+
   useEffect(() => {
     Entity.list({ distinct: "make" })
       .then((res) => setMakes(res.items || []))
@@ -46,7 +52,7 @@ export default function Browse() {
       const query = {};
       if (filters.make) query.make = filters.make;
       if (filters.category) query.category = filters.category;
-      if (filters.q.trim()) query.title = { $regex: filters.q.trim(), $options: "i" };
+      if (debouncedQ.trim()) query.$search = debouncedQ.trim();
       try {
         const res = await Entity.filter(query, { sort: "-created_date", limit: 60 });
         if (active) setItems(res.items || []);
@@ -57,7 +63,7 @@ export default function Browse() {
       }
     })();
     return () => { active = false; };
-  }, [type, filters.q, filters.make, filters.category]);
+  }, [type, debouncedQ, filters.make, filters.category]);
 
   const updateQ = (v) => {
     setFilters((f) => ({ ...f, q: v }));
@@ -99,7 +105,7 @@ export default function Browse() {
             <input
               value={filters.q}
               onChange={(e) => updateQ(e.target.value)}
-              placeholder="Search by title…"
+              placeholder="Search make, model, year, title, details…"
               className="w-full h-11 pl-10 pr-3 rounded-lg border border-input bg-background text-sm outline-none focus:border-amber-500"
             />
           </div>

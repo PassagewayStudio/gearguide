@@ -10,6 +10,22 @@ const TABLES = {
   TroubleshootingStep: 'troubleshooting_steps',
 }
 
+// Columns searched (per table) by the free-text $search filter.
+const SEARCH_FIELDS = {
+  manuals: ['title', 'make', 'model', 'category', 'description', 'source'],
+  common_issues: ['title', 'make', 'model', 'category', 'symptoms', 'solution'],
+  exploded_diagrams: ['title', 'make', 'model', 'category', 'system', 'description', 'parts'],
+  troubleshooting_steps: ['step', 'notes'],
+}
+
+// Split a search string into safe tokens (strips characters that are special inside PostgREST filters).
+const searchTokens = (text) =>
+  String(text)
+    .replace(/[^\p{L}\p{N}\s.'-]/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 6)
+
 const BUCKET = 'uploads'
 
 const unwrap = ({ data, error }) => {
@@ -26,7 +42,14 @@ function makeEntity(table) {
     async filter(query = {}, { sort = '-created_date', limit = 100 } = {}) {
       let q = supabase.from(table).select('*')
       for (const [key, value] of Object.entries(query)) {
-        if (value && typeof value === 'object' && '$regex' in value) {
+        if (key === '$search') {
+          // Every word must match at least one searchable column (so "honda civic 2012" narrows results).
+          for (const token of searchTokens(value)) {
+            const ors = (SEARCH_FIELDS[table] || []).map((f) => `${f}.ilike.*${token}*`)
+            if (/^\d{4}$/.test(token)) ors.push(`year.eq.${token}`)
+            if (ors.length) q = q.or(ors.join(','))
+          }
+        } else if (value && typeof value === 'object' && '$regex' in value) {
           q = q.ilike(key, `%${escapeLike(String(value.$regex))}%`)
         } else {
           q = q.eq(key, value)

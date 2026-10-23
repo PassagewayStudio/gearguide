@@ -11,6 +11,7 @@ import Home from '@/pages/Home';
 import Browse from '@/pages/Browse';
 import Detail from '@/pages/Detail';
 import Contribute from '@/pages/Contribute';
+import Search from '@/pages/Search';
 import Edit from '@/pages/Edit';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -21,6 +22,7 @@ const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Home />} />
     <Route path="/browse/:type" element={<Browse />} />
+    <Route path="/search" element={<Search />} />
     <Route path="/view/:type/:id" element={<Detail />} />
     <Route element={<ProtectedRoute />}>
       <Route path="/contribute" element={<Contribute />} />
