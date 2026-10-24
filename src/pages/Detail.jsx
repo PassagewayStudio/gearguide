@@ -6,6 +6,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Image } from "@/components/ui/image";
 import { ArrowLeft, Plus, ThumbsUp, Wrench, AlertTriangle, Layers, FileText, Calendar, Tag, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import ReviewControls from "@/components/ReviewControls";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import TroubleshootingLog from "@/components/TroubleshootingLog";
@@ -24,7 +25,7 @@ export default function Detail() {
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -123,7 +124,16 @@ export default function Detail() {
 
         <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">{item.title}</h1>
 
-        {user && item.created_by === user.id && (
+        {item.status && item.status !== "approved" && (
+          <div className={`mt-4 rounded-xl border p-4 text-sm ${item.status === "rejected" ? "border-red-200 bg-red-50 text-red-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
+            {item.status === "pending"
+              ? "Pending review. Only you and the admins can see this entry until it's approved."
+              : `Rejected${item.review_note ? `: ${item.review_note}` : "."} Edit it and save to send it back for review.`}
+          </div>
+        )}
+        {isAdmin && <ReviewControls className="mt-4" Entity={Entity} item={item} onChange={setItem} />}
+
+        {user && (item.created_by === user.id || isAdmin) && (
           <div className="mt-4 flex items-center gap-3">
             <Link to={`/edit/${type}/${id}`} className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-border hover:bg-muted">
               <Pencil className="w-4 h-4" /> Edit
@@ -202,7 +212,7 @@ export default function Detail() {
               {type === "manuals" && item.source && <DetailRow icon={FileText} label="Source" value={item.source} />}
             </div>
 
-            {type === "issues" && (
+            {type === "issues" && item.status === "approved" && (
               <button
                 onClick={vote}
                 disabled={voting}

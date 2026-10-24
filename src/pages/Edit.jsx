@@ -15,7 +15,7 @@ const TYPES = {
 
 export default function Edit() {
   const { type, id } = useParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const meta = TYPES[type];
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function Edit() {
   }, [type, id]);
 
   const back = `/view/${type}/${id}`;
-  const canEdit = record && user && record.created_by === user.id;
+  const canEdit = record && user && (record.created_by === user.id || isAdmin);
 
   return (
     <div className="min-h-screen bg-background">

@@ -30,7 +30,7 @@ export default function Contribute() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Contribute to the library</h1>
         <p className="mt-2 text-muted-foreground max-w-xl">
-          Your addition is published instantly and visible to everyone. Thanks for helping fellow mechanics.
+          New entries are reviewed by an admin before they appear publicly. You can follow their status under My entries. Thanks for helping fellow mechanics.
         </p>
 
         {/* Tabs */}

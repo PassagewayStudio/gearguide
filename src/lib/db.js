@@ -26,6 +26,9 @@ const searchTokens = (text) =>
     .filter(Boolean)
     .slice(0, 6)
 
+// Tables that go through review (they have a `status` column).
+const MODERATED = new Set(['manuals', 'common_issues', 'exploded_diagrams'])
+
 const BUCKET = 'uploads'
 
 const unwrap = ({ data, error }) => {
@@ -39,8 +42,11 @@ const escapeLike = (s) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
 function makeEntity(table) {
   return {
     // filter({ make: 'Honda', title: { $regex: 'idle', $options: 'i' } }, { sort: '-created_date', limit: 60 })
-    async filter(query = {}, { sort = '-created_date', limit = 100 } = {}) {
+    // By default only approved entries are returned. Pass { includeAll: true } for "my entries" and the admin queue
+    // (the database still only hands back rows the signed-in user is allowed to see).
+    async filter(query = {}, { sort = '-created_date', limit = 100, includeAll = false } = {}) {
       let q = supabase.from(table).select('*')
+      if (MODERATED.has(table) && !includeAll) q = q.eq('status', 'approved')
       for (const [key, value] of Object.entries(query)) {
         if (key === '$search') {
           // Every word must match at least one searchable column (so "honda civic 2012" narrows results).
@@ -60,8 +66,9 @@ function makeEntity(table) {
       return { items: unwrap(await q) }
     },
 
-    async count(query = {}) {
+    async count(query = {}, { includeAll = false } = {}) {
       let q = supabase.from(table).select('*', { count: 'exact', head: true })
+      if (MODERATED.has(table) && !includeAll) q = q.eq('status', 'approved')
       for (const [key, value] of Object.entries(query)) q = q.eq(key, value)
       const { count, error } = await q
       if (error) throw error
@@ -70,8 +77,10 @@ function makeEntity(table) {
 
     // list({ distinct: 'make' }) -> { items: ['Honda', 'Toyota', ...] }
     async list({ distinct } = {}) {
-      if (!distinct) return { items: unwrap(await supabase.from(table).select('*').limit(1000)) }
-      const rows = unwrap(await supabase.from(table).select(distinct).limit(5000))
+      let base = supabase.from(table).select(distinct || '*')
+      if (MODERATED.has(table)) base = base.eq('status', 'approved')
+      if (!distinct) return { items: unwrap(await base.limit(1000)) }
+      const rows = unwrap(await base.limit(5000))
       const values = [...new Set(rows.map((r) => r[distinct]).filter(Boolean))]
       return { items: values.sort((a, b) => String(a).localeCompare(String(b))) }
     },
@@ -86,6 +95,13 @@ function makeEntity(table) {
 
     async update(id, patch) {
       return unwrap(await supabase.from(table).update(patch).eq('id', id).select().single())
+    },
+
+    // Admin: approve or reject an entry (optionally with a note shown to the author).
+    async review(id, status, note) {
+      return unwrap(
+        await supabase.from(table).update({ status, review_note: note?.trim() || null }).eq('id', id).select().single()
+      )
     },
 
     async delete(id) {
@@ -158,6 +174,14 @@ const auth = {
   },
 }
 
+const admin = {
+  async isAdmin(userId) {
+    if (!userId) return false
+    const { data } = await supabase.from('admins').select('user_id').eq('user_id', userId).maybeSingle()
+    return !!data
+  },
+}
+
 const integrations = {
   Core: {
     // Uploads to the public 'uploads' storage bucket and returns { file_url }.
@@ -175,4 +199,4 @@ const integrations = {
   },
 }
 
-export const db = { entities, auth, integrations }
+export const db = { entities, auth, integrations, admin }

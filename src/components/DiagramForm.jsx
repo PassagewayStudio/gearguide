@@ -48,8 +48,8 @@ export default function DiagramForm({ record }) {
       const saved = record
         ? await db.entities.ExplodedDiagram.update(record.id, fields)
         : await db.entities.ExplodedDiagram.create(fields);
-      setDone(true);
-      setTimeout(() => navigate(`/view/diagrams/${saved.id}`), 900);
+      setDone(saved.status === "approved" ? "approved" : "pending");
+      setTimeout(() => navigate(`/view/diagrams/${saved.id}`), 1800);
     } catch (e) {
       setError("Could not save. Please try again.");
     } finally {
@@ -61,7 +61,7 @@ export default function DiagramForm({ record }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-        <p className="mt-3 font-medium">{record ? "Changes saved." : "Diagram added to the library."}</p>
+        <p className="mt-3 font-medium">{done === "pending" ? "Submitted for review. It will appear publicly once an admin approves it." : record ? "Changes saved." : "Diagram added to the library."}</p>
       </div>
     );
   }

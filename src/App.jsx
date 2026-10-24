@@ -12,6 +12,8 @@ import Browse from '@/pages/Browse';
 import Detail from '@/pages/Detail';
 import Contribute from '@/pages/Contribute';
 import Search from '@/pages/Search';
+import Admin from '@/pages/Admin';
+import MyEntries from '@/pages/MyEntries';
 import Edit from '@/pages/Edit';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -27,6 +29,8 @@ const AppRoutes = () => (
     <Route element={<ProtectedRoute />}>
       <Route path="/contribute" element={<Contribute />} />
       <Route path="/edit/:type/:id" element={<Edit />} />
+      <Route path="/my" element={<MyEntries />} />
+      <Route path="/admin" element={<Admin />} />
     </Route>
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />

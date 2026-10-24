@@ -7,6 +7,7 @@ const AuthContext = createContext()
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [isLoadingAuth, setIsLoadingAuth] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -25,6 +26,13 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
+  useEffect(() => {
+    let active = true
+    setIsAdmin(false)
+    if (user?.id) db.admin.isAdmin(user.id).then((v) => active && setIsAdmin(v)).catch(() => {})
+    return () => { active = false }
+  }, [user?.id])
+
   const logout = useCallback((shouldRedirect = true) => {
     setUser(null)
     return db.auth.logout(shouldRedirect ? window.location.href : undefined)
@@ -36,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoadingAuth, authChecked: !isLoadingAuth, logout, navigateToLogin }}
+      value={{ user, isAdmin, isAuthenticated: !!user, isLoadingAuth, authChecked: !isLoadingAuth, logout, navigateToLogin }}
     >
       {children}
     </AuthContext.Provider>

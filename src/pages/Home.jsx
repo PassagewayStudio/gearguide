@@ -15,7 +15,14 @@ const SECTIONS = [
 ];
 
 export default function Home() {
-  const { user, isAuthenticated, isLoadingAuth, logout } = useAuth();
+  const { user, isAdmin, isAuthenticated, isLoadingAuth, logout } = useAuth();
+  const [pendingCount, setPendingCount] = useState(0);
+  useEffect(() => {
+    if (!isAdmin) return;
+    Promise.all(["Manual", "CommonIssue", "ExplodedDiagram"].map((e) => db.entities[e].count({ status: "pending" }, { includeAll: true })))
+      .then((n) => setPendingCount(n.reduce((a, b) => a + b, 0)))
+      .catch(() => {});
+  }, [isAdmin]);
   const [counts, setCounts] = useState({});
   const [recent, setRecent] = useState({ manuals: [], issues: [], diagrams: [] });
   const [q, setQ] = useState("");
@@ -63,6 +70,14 @@ export default function Home() {
               <Link to="/contribute" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white">
                 <Plus className="w-4 h-4" /> Contribute
               </Link>
+              {isAuthenticated && (
+                <Link to="/my" className="text-sm font-medium text-white/90 hover:text-white">My entries</Link>
+              )}
+              {isAdmin && (
+                <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-300 hover:text-amber-200">
+                  Admin{pendingCount > 0 && <span className="bg-amber-500 text-zinc-900 text-[11px] font-bold rounded-full px-1.5">{pendingCount}</span>}
+                </Link>
+              )}
               {!isLoadingAuth && (isAuthenticated ? (
                 <button onClick={() => logout()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white" title={user?.email}>
                   <LogOut className="w-4 h-4" /> Sign out

@@ -42,6 +42,11 @@ export default function ResourceCard({ item, type }) {
           <Icon className="w-3 h-3" />
           {meta.label}
         </span>
+        {item.status && item.status !== "approved" && (
+          <span className={`absolute bottom-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-semibold ${item.status === "rejected" ? "bg-red-600 text-white" : "bg-amber-500 text-zinc-900"}`}>
+            {item.status === "rejected" ? "Rejected" : "Pending review"}
+          </span>
+        )}
         {item.category && (
           <span className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[11px] font-medium ${CATEGORY_COLORS[item.category] || "bg-zinc-100 text-zinc-700"}`}>
             {item.category}

@@ -49,8 +49,8 @@ export default function IssueForm({ record }) {
       const saved = record
         ? await db.entities.CommonIssue.update(record.id, fields)
         : await db.entities.CommonIssue.create({ ...fields, helpful_votes: 0 });
-      setDone(true);
-      setTimeout(() => navigate(`/view/issues/${saved.id}`), 900);
+      setDone(saved.status === "approved" ? "approved" : "pending");
+      setTimeout(() => navigate(`/view/issues/${saved.id}`), 1800);
     } catch (e) {
       setError("Could not save. Please try again.");
     } finally {
@@ -62,7 +62,7 @@ export default function IssueForm({ record }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-        <p className="mt-3 font-medium">{record ? "Changes saved." : "Issue added to the database."}</p>
+        <p className="mt-3 font-medium">{done === "pending" ? "Submitted for review. It will appear publicly once an admin approves it." : record ? "Changes saved." : "Issue added to the database."}</p>
       </div>
     );
   }
