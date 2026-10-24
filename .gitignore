@@ -1,6 +1,7 @@
-#env
+# Environment files (keep the template)
 .env
 .env.*
+!.env.example
 
 # Logs
 /logs
@@ -34,6 +35,3 @@ dist-ssr
 
 .env
 .vite
-
-# Local link to a Base44 app, written by `base44 link`
-base44/.app.jsonc

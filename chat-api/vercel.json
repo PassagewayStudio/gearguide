@@ -1,0 +1,7 @@
+{
+  "functions": "api/chat.js",
+  "externalFiles": [".env*", "node_modules/**"],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/chat.js" }
+  ]
+}

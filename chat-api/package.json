@@ -1,0 +1,14 @@
+{
+  "name": "gearguide-chat",
+  "version": "1.0.0",
+  "description": "Garagewiki chatbot API — on-demand RAG over Supabase content + OpenAI-compatible LLM, streamed to the frontend.",
+  "type": "module",
+  "main": "api/chat.js",
+  "scripts": {
+    "start": "node api/chat.js",
+    "test": "node test-chat.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.58.0"
+  }
+}

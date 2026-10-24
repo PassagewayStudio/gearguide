@@ -1,6 +1,6 @@
--- GearGuide / Garagewiki schema for Supabase.
--- Run once in the Supabase dashboard: SQL Editor -> New query -> paste -> Run.
--- Entity fields were inferred from the Base44 export's forms and pages (the export had no schema files).
+-- GearGuide / Garagewiki: complete schema for a fresh Supabase project.
+-- Run once in the Supabase dashboard: SQL Editor -> New query -> paste -> Run. Safe to re-run.
+-- Includes everything in supabase/migrations/ (those files exist for upgrading older installs).
 
 create extension if not exists pgcrypto;
 
