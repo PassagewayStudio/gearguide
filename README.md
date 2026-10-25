@@ -11,6 +11,8 @@ React + Vite + Tailwind on the front end, [Supabase](https://supabase.com) for t
 - **Contribute** manuals (with cover image and PDF upload up to 50 MB), common issues (photos, severity, symptoms and fix) and exploded diagrams (image and parts list).
 - **Troubleshooting log** on each issue, plus a "helpful" vote.
 - **Edit and delete your own entries.** Editing an approved entry sends it back to review.
+- **Email notifications:** authors are emailed when an admin approves or rejects their entry (the rejection includes the admin's note and an edit link).
+- **Storage clean-up:** admins can find and delete uploaded files that no entry uses any more.
 - **Review-first moderation:** new entries are `pending` and visible only to their author and admins. Admins approve or reject (with an optional note) from a review queue. "My entries" shows each submission's status.
 
 ## How it works
@@ -22,6 +24,7 @@ Browser (React SPA on Vercel)
 Supabase
    ├─ Auth      email + OTP, Google OAuth, password reset  (emails sent through Resend SMTP)
    ├─ Postgres  manuals · common_issues · exploded_diagrams · troubleshooting_steps · admins
+   │            (a trigger sends review emails through pg_net → Resend API)
    └─ Storage   public "uploads" bucket for images and PDFs
 ```
 
@@ -76,7 +79,25 @@ on conflict do nothing;
 
 An **Admin** link with a pending count then appears on the home page.
 
-### 5. Run locally
+### 5. Review emails (optional)
+
+Authors get an email when their entry is approved or rejected. This runs inside Supabase (a database trigger calls the Resend API through `pg_net`), so there is nothing extra to host.
+
+1. Make sure your sending domain is verified in Resend (step 2).
+2. In the SQL Editor, store three settings in Vault, once, with your own values:
+   ```sql
+   select vault.create_secret('re_YOUR_API_KEY', 'resend_api_key');
+   select vault.create_secret('Garagewiki <no-reply@YOUR-DOMAIN>', 'email_from');
+   select vault.create_secret('https://YOUR-SITE-DOMAIN', 'site_url');
+   ```
+3. Approve or reject a test entry from the Admin page. If no email arrives, check:
+   ```sql
+   select id, status_code, left(content::text, 200) as response, created
+   from net._http_response order by created desc limit 5;
+   ```
+   If the three Vault secrets are missing, moderation still works and the database logs a warning instead of sending.
+
+### 6. Run locally
 
 ```bash
 cp .env.example .env.local     # add your Supabase URL and anon key
@@ -86,7 +107,7 @@ npm run dev                    # http://localhost:5173
 
 Other scripts: `npm run build`, `npm run preview`, `npm run lint`.
 
-### 6. Deploy to Vercel
+### 7. Deploy to Vercel
 
 Import the repo, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables, and deploy. `vercel.json` handles single-page-app routing. For a custom domain, add it under **Settings → Domains**, create the CNAME it asks for (DNS only if you use Cloudflare), then update Supabase's Site URL and Redirect URLs.
 
@@ -100,6 +121,7 @@ src/
 supabase/
   schema.sql    complete schema for a fresh project
   migrations/   incremental changes, for upgrading an existing database
+                (001 step cascade · 002 moderation · 003 review emails · 004 storage clean-up)
 ```
 
 ## Data model
@@ -115,10 +137,10 @@ supabase/
 ## Known limits
 
 - Troubleshooting steps are not moderated (admins can delete them).
-- Deleting an entry does not delete its uploaded files from storage.
+- Deleting an entry or replacing an image leaves the old file in storage until an admin runs **Storage clean-up** on the Admin page. SQL cannot delete stored files, so the app removes them through the Storage API. Files under a day old are never removed.
 - Editing an approved entry returns it to review, even for small fixes.
 - The Supabase free tier pauses inactive projects and limits email volume and file size.
 
 ## Ideas for later
 
-Email notifications on approval or rejection, an n8n workflow that suggests moderation decisions, per-step moderation, and cleaning up orphaned uploads.
+An n8n workflow that suggests moderation decisions, an email to admins when something is waiting, per-step moderation, and a scheduled clean-up of unused uploads.

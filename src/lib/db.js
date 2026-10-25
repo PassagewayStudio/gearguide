@@ -180,6 +180,24 @@ const admin = {
     const { data } = await supabase.from('admins').select('user_id').eq('user_id', userId).maybeSingle()
     return !!data
   },
+
+  // Files in the uploads bucket that no entry references any more (and are over a day old). Admin only.
+  async orphanedUploads() {
+    const { data, error } = await supabase.rpc('orphaned_uploads')
+    if (error) throw error
+    return data || []
+  },
+
+  // Deletes files through the Storage API (SQL can't remove the stored file itself). Returns how many were removed.
+  async deleteUploads(paths) {
+    let removed = 0
+    for (let i = 0; i < paths.length; i += 100) {
+      const { data, error } = await supabase.storage.from(BUCKET).remove(paths.slice(i, i + 100))
+      if (error) throw error
+      removed += data?.length ?? 0
+    }
+    return removed
+  },
 }
 
 const integrations = {

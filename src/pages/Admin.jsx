@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { useAuth } from "@/lib/AuthContext";
 import ResourceCard from "@/components/ResourceCard";
 import ReviewControls from "@/components/ReviewControls";
+import StorageCleanup from "@/components/StorageCleanup";
 
 const SECTIONS = [
   { type: "manuals", entity: "Manual", title: "Manuals" },
@@ -94,6 +95,7 @@ export default function Admin() {
                 );
               })
             )}
+            <StorageCleanup />
           </>
         )}
       </div>
