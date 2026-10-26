@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Search as SearchIcon, Wrench, AlertTriangle, Layers } from "lucide-react";
 import { db } from "@/lib/db";
 import ResourceCard from "@/components/ResourceCard";
+import posthog from "posthog-js";
 
 const SECTIONS = [
   { type: "manuals", entity: "Manual", title: "Manuals", icon: Wrench },
@@ -34,8 +35,23 @@ export default function Search() {
         }
       })
     ).then((pairs) => {
-      if (active) { setResults(Object.fromEntries(pairs)); setLoading(false); }
+  if (active) {
+    setResults(Object.fromEntries(pairs));
+    setLoading(false);
+    const counts = Object.fromEntries(
+      pairs.map(([type, items]) => [type, Math.min(items.length, PREVIEW)])
+    );
+    const resultCount = Object.values(counts).reduce((a, b) => a + b, 0);
+    posthog.capture("search_performed", {
+      query: q.trim().toLowerCase(),
+      result_count: resultCount,
+      zero_results: resultCount === 0,
+      manuals_count: counts.manuals,
+      issues_count: counts.issues,
+      diagrams_count: counts.diagrams,
     });
+  }
+});
     return () => { active = false; };
   }, [q]);
 

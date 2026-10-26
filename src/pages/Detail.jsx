@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-
+import posthog from "posthog-js";
 import { Image } from "@/components/ui/image";
 import { ArrowLeft, Plus, ThumbsUp, Wrench, AlertTriangle, Layers, FileText, Calendar, Tag, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
@@ -37,7 +36,20 @@ export default function Detail() {
     (async () => {
       try {
         const rec = await Entity.get(id);
-        if (active) setItem(rec);
+        if (active) {
+          setItem(rec);
+          if (rec) {
+            posthog.capture("guide_viewed", {
+              type,
+              entry_id: id,
+              title: rec.title,
+              make: rec.make,
+              model: rec.model,
+              year: rec.year,
+              category: rec.category,
+            });
+          }
+        }
       } catch {
         if (active) setItem(null);
       } finally {
@@ -65,11 +77,12 @@ export default function Detail() {
     try {
       const updated = await Entity.vote(id);
       setItem(updated);
+      posthog.capture("guide_voted_helpful", { type, entry_id: id });
     } catch {} finally {
       setVoting(false);
     }
   };
-
+  
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-6 py-20">
