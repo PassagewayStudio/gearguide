@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { db } from '@/lib/db'
+import posthog from 'posthog-js'
 
 const AuthContext = createContext()
 
@@ -32,6 +33,15 @@ export const AuthProvider = ({ children }) => {
     if (user?.id) db.admin.isAdmin(user.id).then((v) => active && setIsAdmin(v)).catch(() => {})
     return () => { active = false }
   }, [user?.id])
+  
+  useEffect(() => {
+  if (isLoadingAuth) return
+  if (user?.id) {
+    posthog.identify(user.id)
+  } else if (posthog.get_property('$user_state') === 'identified') {
+    posthog.reset()
+  }
+}, [user?.id, isLoadingAuth])
 
   const logout = useCallback((shouldRedirect = true) => {
     setUser(null)
