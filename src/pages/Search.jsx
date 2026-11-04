@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Search as SearchIcon, Wrench, AlertTriangle, Lay
 import { db } from "@/lib/db";
 import ResourceCard from "@/components/ResourceCard";
 import posthog from "posthog-js";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 
 const SECTIONS = [
   { type: "manuals", entity: "Manual", title: "Manuals", icon: Wrench },
@@ -18,6 +19,7 @@ export default function Search() {
   const [text, setText] = useState(q);
   const [results, setResults] = useState({});
   const [loading, setLoading] = useState(false);
+  const showHint = useFeatureFlagEnabled("gearguide-search-hint");
 
   useEffect(() => setText(q), [q]);
 
@@ -85,6 +87,9 @@ export default function Search() {
           />
         </form>
         <p className="mt-2 text-xs text-muted-foreground">Every word has to match something: make, model, year, title, category or details.</p>
+        {showHint && (
+          <p className="mt-1 text-xs text-amber-700">Tip: add a year to narrow down results.</p>
+        )}
 
         {!q.trim() ? null : loading ? (
           <p className="mt-10 text-sm text-muted-foreground">Searching…</p>
