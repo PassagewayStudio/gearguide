@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import ResourceCard from "@/components/ResourceCard";
 import { Wrench, AlertTriangle, Layers, ArrowRight, Plus, Search, BookOpen, LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 
 
 const SECTIONS = [
@@ -16,6 +17,7 @@ const SECTIONS = [
 
 export default function Home() {
   const { user, isAdmin, isAuthenticated, isLoadingAuth, logout } = useAuth();
+  const showHint = useFeatureFlagEnabled("gearguide-search-hint");
   const [pendingCount, setPendingCount] = useState(0);
   useEffect(() => {
     if (!isAdmin) return;
@@ -116,6 +118,10 @@ export default function Home() {
                 Search
               </button>
             </form>
+
+            {showHint && (
+              <p className="mt-3 text-xs text-amber-300">Tip: add a year to narrow down results.</p>
+            )}
 
             <p className="mt-4 text-sm text-zinc-400">
               {total > 0 ? `${total} entries and counting` : "Be the first to add an entry"}
