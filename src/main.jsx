@@ -8,7 +8,7 @@ import '@/index.css'
 
 posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
   api_host: '/ingest',
-  ui_host: 'https://us.posthog.com'
+  ui_host: 'https://us.posthog.com',
   defaults: '2025-05-24',
   person_profiles: 'identified_only',
 })
