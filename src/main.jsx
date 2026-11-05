@@ -7,7 +7,8 @@ import ChatWidget from '@/components/ChatWidget.jsx'
 import '@/index.css'
 
 posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
-  api_host: import.meta.env.VITE_POSTHOG_HOST,
+  api_host: '/ingest',
+  ui_host: 'https://us.posthog.com'
   defaults: '2025-05-24',
   person_profiles: 'identified_only',
 })
